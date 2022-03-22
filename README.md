@@ -108,6 +108,48 @@ I then create loops to go through the rows (following increments of the step siz
 Finally, I emplace the loop for the dimensions that iterates through 90 times. This part remains the exact same as my solution to the former row-wise version, as I assigned the index (to be used for accessing the distance matrix) for the rows to be the local range for the running rank and thereafter, I simply compute the sum of the elements (inside of the square root for the distance equation) with the column indexed element subtracted from the local row indexed element for each dimension. Again, I simply compute the square root of this summed value outside this innermost loop (for iterating through the dimensions) in order to obtain the required distance, which accounts for one element or distance in the distance matrix.  
 </details>
 
+<details>
+<summary> Distribution Sort</summary>
+
+## Version 1.0
+  
+- Problem/Question: [Distribution Sort on Uniformly Distributed Data](https://jan.ucc.nau.edu/mg2745/pedagogic_modules/courses/hpcdataintensive/distribution_sort_1/#programming-activity-1)
+  
+- My solution: [DistributionSortV1.c](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/DistributionSortV1.c)
+  
+- Code explanation:
+  
+After the initial setup of the MPI execution environment, each rank is made to generate its own portion (equal to the total data points divided by the process count) of the uniform data to be sorted using the `generateData` function, and thereafter, memory is allocated for the send and receive buffers for each rank, and for the dataset in general. Now post this starter code, I declare variables to hold timings for the distribution, sorting and overall execution of the computations. I then use a sum reduction (`MPI_SUM`) to add up the local sums from each rank into a variable accounting for the global sum of all array elements across all ranks, which I then print out using rank 0. The value that I get is what I would compare while doing the same after the data has been sorted, as a required sanity check to ensure that the data is left unaffected or is correct. 
+
+I emplace a barrier right after this to collect the start time for the overall computation's time measurement, ensuring that all ranks have reached up till this point. I proceed to allocate memory and then assign the ranges of data that each rank would get and work upon in a 2D array, wherein the first element of each 1D array denotes the starting position (with the interval size given by the ratio of `MAXVAL` is to the number of processes) and the second element denotes the end. I then broadcast these two values for all the ranks to know the ranges of the data. Now proceeding to the data distribution part, I first begin by collecting the starting time point for this metric, then I initialize a counter to hold the number of elements or size of the dataset for a rank. I then iterate over all the ranks to assign the appropriate portion of the data (less than the upper bound and equal to or greater than the lower bound, given by the two elements in the 2D array for each rank that was broadcasted) to each rank from the entire dataset if the data is on the range designated for the rank. If not, then I collect the data in a buffer and keep track of the size of it required to be sent by a counter which gets updated for the amount of data that lies in the range for the rank (same logic following the if-conditional up till this point). I then use two non-blocking asynchronous sends to send the required portion of data and the size (total number of elements) of it for each rank one by one through the iterations of the loop, and then for the size that is received, I use that number to iterate that many times and assign the correctly partitioned data for the rank, all before exiting the loop for ranks.  
+
+Thereafter, I collect the time again which is the time point that denotes the end of the data distribution and the start of the sorting phase. I proceed with a call to qsort with the provided helper function to compare elements in its arguments. Right after, I collect the time again for the final time, which as a time point denotes the end of both the sorting and the total computation time for the core portion. I then compute the time measurements by getting out the differences between the appropriate start and end points. I follow with a reduction (`MPI_MAX`) on all three of these time measurements, and then proceed to print them. As the required sanity check, I compute the global sum of all the array elements in the data set across all ranks via a reduction of the local sums like I did previously (prior to data distribution).
+Lastly, I deallocate memory for all the variables that I used with calls to `free()`.
+ 
+## Version 2.0
+  
+- Problem/Question: [Distribution Sort on Exponentially Distributed Data](https://jan.ucc.nau.edu/mg2745/pedagogic_modules/courses/hpcdataintensive/distribution_sort_2/#programming-activity-2)  
+
+- My solution: [DistributionSortV2.c](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/DistributionSortV2.c)
+  
+- Code explanation:   
+  
+The only change here with respect to the version above is the introduction of the function that generates random values from the exponential distribution, and the use of it to generate the data (using a lambda or rate of change constant of 4 as passed on line 198 in DistributionSortV2.c) inside the function `generateData`.
+
+## Version 3.0
+  
+- Problem/Question: [Distribution Sort on Exponentially Distributed Data with Histogram](https://jan.ucc.nau.edu/mg2745/pedagogic_modules/courses/hpcdataintensive/distribution_sort_3/#programming-activity-3)  
+
+- My solution: [DistributionSortV3.c](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/DistributionSortV3.c)
+  
+- Code explanation: 
+
+The core refactor or rather addition here with respect to the version above was pre-computing the histogram or getting the frequency-based ranges for the ranks prior to data distribution. I start by declaring and allocating memory for two counters holding `MAXVAL` number of elements that keeps track of the frequency of a data in a rank and across all ranks globally, following with initialization of these arrays to zero for all the elements. I then make the ranks compute the frequency of each data element in their local counters and for the other ones other than rank 0, have them send these back to rank 0 for computing the values for the global counter. 
+
+After I receive the local counters from each rank (inside a loop that iterates up till the process count, getting a receive from all the other ranks apart from 0 itself) at rank 0, I update my global counter array by incrementing it with the local ones (this is followed after the receives in the same loop, with the loop indices taking care of the appropriate counter indexing). I then declared a variable to hold the ratio of data distribution for each rank, and one to set the range for each rank in a loop. I also used two counters here, one for accounting and keeping up with the frequency values of the global counter, and one to set the range for each rank incrementally.
+
+Now inside a loop that runs up till the global upper bound (`MAXVAL`) and until all the ranks have got their ranges, I set for each rank the range which is based on the distribution ratio and adjusted (or shifted) based on the frequencies of the data. I used a separate variable to keep track of the minimum range for each rank to start next with, and there is a corner case for the last rank in order to accommodate the leftover portion of data. After the adjusted ranges have been computed for all the ranks, I broadcast these and proceed just like I did for the versions above.
+</details>
 
 Compilation
 ---
