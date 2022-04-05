@@ -4,7 +4,7 @@
 --------------------------*/
 // Compilation: mpicc <filename>.c -o <executablename>
 // Execution: mpirun -np <processcount> -hostfile <hostfilename>.<hostfileextension> ./<executablename>
-// Example: mpicc -O3 DistributionSortV1.c -lm -o DistributionSortV1 && mpirun -np 2 -hostfile myhostfile.txt ./DistributionSortV1
+// Example: mpicc -O3 DistributionSort.c -lm -o DistributionSort && mpirun -np 2 -hostfile myhostfile.txt ./DistributionSort
 #include <mpi.h>
 #include <math.h>
 #include <stdio.h>

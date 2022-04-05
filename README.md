@@ -115,7 +115,7 @@ Finally, I emplace the loop for the dimensions that iterates through 90 times. T
   
 - Problem/Question: [Distribution Sort on Uniformly Distributed Data](https://jan.ucc.nau.edu/mg2745/pedagogic_modules/courses/hpcdataintensive/distribution_sort_1/#programming-activity-1)
   
-- My solution: [DistributionSortV1.c](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/DistributionSortV1.c)
+- My solution: [DistributionSort.c](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/DistributionSort.c)
   
 - Code explanation:
   
@@ -154,16 +154,19 @@ Now inside a loop that runs up till the global upper bound (`MAXVAL`) and until 
 Compilation
 ---
 ```sh
-mpicc <filename.c> -o <executablename>
+> C:
+mpicc <filename>.c -o <executablename>
+> C++:
+mpic++ <filename>.cpp -o <executablename> 
 ```
 
 Execution
 ---
 ```sh
-> Local
-mpirun -np <processcount> -hostfile <hostfilename>.<extension> ./<executablename>
-> Monsoon
-srun -n<processcount> ./<executablename>
+> Local:
+mpirun -np <processcount> -hostfile <hostfilename>.<extension> ./<executablename> <arguments>
+> Monsoon:
+srun --nodes=<nodecount> --ntasks-per-node=1 -n<processcount> ./<executablename> <arguments>
 ```
 
 Scheduling

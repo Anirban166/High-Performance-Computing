@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=distributionSortV1       
-#SBATCH --output=/scratch/ac4743/distributionSortV1.out	
-#SBATCH --error=/scratch/ac4743/distributionSortV1.err
+#SBATCH --job-name=distributionSort       
+#SBATCH --output=/scratch/ac4743/distributionSort.out	
+#SBATCH --error=/scratch/ac4743/distributionSort.err
 #SBATCH --time=00:30:00
 #SBATCH --mem=30000
 #SBATCH --nodes=1
@@ -12,7 +12,7 @@
 
 module load openmpi
 
-mpicc -O3 DistributionSortV1.c -lm -o DistributionSortV1
+mpicc -O3 DistributionSort.c -lm -o DistributionSort
 # Declaring an array to hold different process counts:
 declare -a processCount=(1 2 4 8 12 16 20)
 # Extracting the length of it in a variable:
@@ -21,5 +21,5 @@ arrayLength=${#processCount[@]}
 for((i = 0; i < ${arrayLength}; i++)); 
 do    
   echo -e "\nRunning the distribution sort computation with ${processCount[$i]} processes on uniformly distributed data:"
-  srun -n${processCount[$i]} ./DistributionSortV1
+  srun -n${processCount[$i]} ./DistributionSort
 done
