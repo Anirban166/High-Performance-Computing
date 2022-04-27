@@ -151,6 +151,31 @@ After I receive the local counters from each rank (inside a loop that iterates u
 Now inside a loop that runs up till the global upper bound (`MAXVAL`) and until all the ranks have got their ranges, I set for each rank the range which is based on the distribution ratio and adjusted (or shifted) based on the frequencies of the data. I used a separate variable to keep track of the minimum range for each rank to start next with, and there is a corner case for the last rank in order to accommodate the leftover portion of data. After the adjusted ranges have been computed for all the ranks, I broadcast these and proceed just like I did for the versions above.
 </details>
 
+<details>
+<summary> Range Queries</summary>
+
+## Version 1.0
+  
+- Problem/Question: [Brute Force Approach for the Range Queries Computation](https://jan.ucc.nau.edu/mg2745/pedagogic_modules/courses/hpcdataintensive/range_query_0/#programming-activity-1)
+  
+- My solution: [RangeQueries.c](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/RangeQueries.c)
+  
+- Code explanation:
+
+After the initial setup of the MPI execution environment, each rank is made to generate the entire dataset and its own portion (equal to the total queries divided by the process count) of the total queries using th functions `generateData` and `generateQueries`. I then emplace a barrier to wait for all ranks to reach completion of this data and query generation phase. Thereafter, I collect the time which is the time point that denotes the start of the range query computation. I proceed to loop over the number of queries for the rank, then for each, I iterate through the entire dataset of points (since this *is* the brute force approach) and if the point lies in the rectangle bound by the minimum and maximum (x, y) values given by a particular query, then I increment my counter which stores the number of ‘hits’ or effectively the points with satisfy the range queries. This counter is reset for each query, but the hits are added to a buffer I initialized early on to keep track of the total number of successful hits for each rank. Right after, I collect the time again which as a time point denotes the end of the range query computation. I then compute the time measurements by getting out the differences between the appropriate start and end points. I follow with a reduction (`MPI_MAX`) on the time measurement and then print it. Next up, I compute the global sum of all the elements in my buffer storing the hits across all ranks via a reduction (`MPI_SUM`) of the local sums to obtain the total number of hits for the range queries for all ranks. Lastly, I deallocate memory for all the variables that I used with calls to `free()`.  
+ 
+## Version 2.0
+  
+- Problem/Question: [Computing the Range Queries with an optimized apporach using R-trees](https://jan.ucc.nau.edu/mg2745/pedagogic_modules/courses/hpcdataintensive/range_query_1/#programming-activity-2)  
+
+- My solution: [RangeQueriesV2.cpp](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/RangeQueriesV2.cpp)
+  
+- Code explanation:   
+  
+The core change that I made here with respect to the previous approach is the construction of the R-tree for each and every point of the dataset that gets generated across all ranks. I began by creating an object of the `RTree` class (refer to the [`Rtree.h`](https://github.com/Anirban166/High-Performance-Computing/blob/main/Programs/RTree.h) file for the underlying data structure's source code) and then iterating through the dataset to fill in the R-Tree with appropriate parameters, which include the minimum and maximum bounds for each point, as I supplied from the `Rect` struct. Note that since I'm dealing with points here (as opposed to polygons with four sides), the x and y coordinates for the bounds (min, max) are the same. After the construction of the R-Tree, I perform my range queries in each rank by searching through the constrained areas (minimized search space) given by the bounds that it creates. Here each rank iterates up till its query count and creates a `Rect` given by the specific query’s (x, y) limits (passed as arguments in order), and these minimum and maximum bounds are passed onto the search method for the `Rtree` object that I previously created. This function returns one (true for search) if the point satisfies the query limits, and this is then added to my buffer for keeping track of the ‘hits’ or successful range query satisfying points for a particular rank (a reduction is applied later to compute the global hits across all ranks, like previously). Another change here (wrt the former version) was for the timings, as I had to keep track of both the R-Tree creation time and the search time (or basically range query computation time) for the queries inside it, apart from the total time. For this, I just emplaced barriers appropriately (waiting for all ranks’ execution to reach those points) and used calls to `MPI_Wtime()` to collect the required time points, following up with reductions on them.
+
+</details>
+
 Compilation
 ---
 ```sh
